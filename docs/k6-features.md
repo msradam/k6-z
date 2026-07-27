@@ -30,10 +30,9 @@ When the remaining extensions migrate, the two collapse into one. See
 
 ## Secrets
 
-k6 1.3 added `k6/secrets`, and it is the right answer for RACF credentials. The
-usual approach of putting a password in an environment variable is fine on a laptop
-and wrong on a shared build agent, where environment variables show up in process
-listings and leak into logs the moment a step dumps its environment.
+k6 1.3 added `k6/secrets`. Putting a RACF password in an environment variable is
+fine on a laptop, but on a shared build agent environment variables appear in
+process listings and in logs whenever a step dumps its environment.
 
 ```javascript
 import secrets from 'k6/secrets';
@@ -55,7 +54,7 @@ network call, and you do not want that in the measurement.
 
 ## Scenarios and executors
 
-Not new, but the reason k6 fits mainframe work at all, so it belongs here.
+Not new in 2.x, but central to how these scripts are written.
 
 ```javascript
 scenarios: {
@@ -91,8 +90,8 @@ thresholds: {
 }
 ```
 
-`abortOnFail` is worth using on smoke tests. A failed logon should stop the run
-immediately rather than produce a red summary twenty minutes later.
+`abortOnFail` stops the run at the first failed check, which is useful on smoke
+tests where a failed logon makes the remaining twenty minutes pointless.
 
 k6 2.1 tightened threshold parsing: a percentile outside 0 to 100 is now a parse
 error instead of being silently accepted, which used to make a typo look like a
@@ -121,8 +120,8 @@ you running `xk6 build`:
 import sql from 'k6/x/sql';
 ```
 
-Useful for extensions in the official registry. Not useful here: xk6-tn3270 is not
-registered, so it needs a real build. That is what `bundles/` is for.
+This works for extensions in the official registry. xk6-tn3270 is not registered,
+so it needs an explicit build from `bundles/`.
 
 Two environment variables went away in 2.0: `K6_BINARY_PROVISIONING` and
 `K6_ENABLE_COMMUNITY_EXTENSIONS`. Resolution is on by default and the catalogs are
@@ -157,14 +156,14 @@ export function handleSummary(data) {
 }
 ```
 
-Returning a value replaces k6's own stdout summary rather than adding to it. For a
-capacity conversation that is usually what you want: four numbers people care about
-instead of forty they do not.
+Returning a value replaces k6's own stdout summary rather than adding to it, which
+lets you print a short set of numbers for a capacity review and write the full
+report to a file.
 
 `--summary-mode` is now `compact` (the default), `full`, or `disabled`. The old
 `--no-summary` flag and `--summary-mode=legacy` were removed in 2.0.
 
-## Other 2.0 removals worth checking
+## Other 2.0 removals
 
 | Removed | Replacement |
 | --- | --- |
@@ -181,6 +180,5 @@ Full detail in the [k6 v2.0.0 release notes](https://github.com/grafana/k6/relea
 ## For agents driving k6
 
 k6 2.1 made `k6 x` self-describing: running it lists the extension subcommands the
-binary has, including `k6 x mcp`, an MCP server, and `k6 x docs`. If you are wiring
-an AI agent into a testing workflow, that is how it discovers what the binary can
-do rather than guessing at flags.
+binary has, including `k6 x mcp`, an MCP server, and `k6 x docs`. An agent driving
+k6 can use that to enumerate the available subcommands.

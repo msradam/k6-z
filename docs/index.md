@@ -30,48 +30,35 @@ binaries for s390x that upstream k6 does not publish.</p>
   </a></li>
 </ul>
 
-## The problem
+## Existing tools
 
-Mainframe load testing has been solved for a long time, and that is most of the
-trouble. IBM's Teleprocessing Network Simulator shipped in 1976. Its successor,
-Workload Simulator for z/OS, was announced in 2002 and last had a release in 2018.
-Both work. Both drive 3270 data streams from scripts written in STL, run on the
-host, and produce reports that live on the host.
+IBM's Teleprocessing Network Simulator shipped in 1976. Its successor, Workload
+Simulator for z/OS, was announced in 2002 and last had a release in 2018. Both
+drive 3270 data streams from scripts written in STL, run on the host, and write
+reports that stay on the host.
 
-That model was correct when the system under test was the only system. It fits
-badly now. The scripts are hard to review because they do not live in the same
-repository as the application. The results are hard to compare because they do not
-land in the same dashboards as everything else. And the skills needed to write
-them are concentrated in the people who have the least time.
+They work. The friction is that the scripts sit apart from the application they
+test, the reports sit apart from every other performance number in the
+organisation, and STL is a language most of the team cannot read.
 
-JMeter covers the HTTP surface, and plenty of shops drive z/OSMF with it. It is
-less comfortable everywhere else: test plans are XML edited through a GUI, the
-3270 story depends on third-party plugins, and a JVM per load generator is a real
-cost when you want many of them.
+JMeter covers the HTTP surface, and plenty of shops drive z/OSMF with it. Its 3270
+support depends on third-party plugins, its test plans are XML edited through a
+GUI, and it needs a JVM per load generator.
 
-## Why k6
+## What k6 gives you
 
-k6 is a single static binary that runs test scripts written in JavaScript. That
-combination turns out to fit the mainframe unusually well.
+k6 is a single static binary that runs test scripts written in JavaScript. A
+script is a file in the application's repository, reviewed in the same pull
+request.
 
-Tests are code. A k6 script is a file in the same repository as the application,
-reviewed in the same pull request, with the same history. Someone who has never
-touched a mainframe can read what the test does.
-
-Load shape is declared, not improvised. k6 models arrival rate and VU count
-separately through [executors](https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/).
-Batch submission is bursty, catalog searches are steady, operator commands are
-serialised. You can run all three at once, each with its own profile, in one test.
-
-Pass and fail are part of the test. [Thresholds](https://grafana.com/docs/k6/latest/using-k6/thresholds/)
-turn a p95 or an error rate into an exit code, which is what a pipeline needs.
-
-Results go where your other results go. k6 writes to Prometheus, OpenTelemetry,
-InfluxDB, JSON, or Grafana Cloud. Mainframe latency ends up on the same dashboard
-as everything else, which is the only way anyone will look at it.
-
-The protocol surface is extensible. Go extensions add protocols k6 does not ship,
-which is how TN3270 and SSH get covered here.
+[Executors](https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/)
+declare arrival rate and concurrency separately, so bursty batch submission and
+steady catalog queries can run in one test with different profiles.
+[Thresholds](https://grafana.com/docs/k6/latest/using-k6/thresholds/) turn a p95
+or an error rate into a process exit code, which is what a pipeline reads. Output
+goes to Prometheus, OpenTelemetry, InfluxDB, JSON, or Grafana Cloud, so mainframe
+latency lands on the same dashboards as the services around it. Go extensions add
+protocols k6 does not ship, which is how TN3270 and SSH are covered here.
 
 <div class="callout">
 <p>Background reading, both by the author of this repository:
@@ -81,8 +68,7 @@ and <a href="https://medium.com/theropod/go-ing-native-porting-grafana-k6-to-z-o
 
 ## What is in this repository
 
-Three families of sample script, one per interface a z/OS system exposes to a test
-driver:
+Sample scripts for four interfaces:
 
 | Surface | Transport | Extension needed |
 | --- | --- | --- |
@@ -91,13 +77,13 @@ driver:
 | [ZOAU over SSH]({{ '/zoau/' | relative_url }}) | SSH | xk6-ssh |
 | [ZOAU natively]({{ '/zoau/' | relative_url }}) | Local process | xk6-exec |
 
-Alongside them: prebuilt binaries including `linux/s390x`, and a mock z/OSMF server
-so the scripts can be run and reviewed by someone with no mainframe access at all.
+Plus prebuilt binaries including `linux/s390x`, and a mock z/OSMF server for
+running the scripts without a mainframe.
 
 ## Try it without a mainframe
 
-The repository ships a stand-in z/OSMF that answers the same request shapes as the
-real one. It is enough to see the scripts work end to end.
+The mock server answers the same request shapes as z/OSMF, with a job queue that
+moves submissions from `INPUT` through `ACTIVE` to `OUTPUT` over a few seconds.
 
 ```bash
 git clone https://github.com/msradam/k6-z.git
@@ -111,14 +97,14 @@ ZOSMF_URL=http://127.0.0.1:10443 ZOS_USER=IBMUSER ZOS_PASSWORD=mock \
 ```
 
 That submits JCL, polls the job to completion, reads its spool, and purges it,
-with thresholds on turnaround time. Against a real system the only thing that
-changes is `ZOSMF_URL`.
+with thresholds on turnaround time. To run it against a real system, change
+`ZOSMF_URL`.
 
 ## Against a real system
 
-Start with the smoke test. It confirms the host answers, the credentials work, and
-TLS negotiates, and it aborts on the first failed check rather than running for
-twenty minutes to tell you the password was wrong.
+Start with the smoke test. It checks that the host answers, that the credentials
+work, and that TLS negotiates. Its checks threshold is set to `abortOnFail`, so a
+bad password stops the run immediately.
 
 ```bash
 ./dist/k6-z run \
@@ -139,7 +125,7 @@ display and read commands drawn from IBM's
 [Galasa SimBank](https://galasa.dev), which runs on a laptop, so you can get one
 working before going near an LPAR.
 
-The scripts are starting points, not a benchmark suite. Nothing here produces a
-number you should compare against another shop's number. Every host name, user id,
-and qualifier comes from the environment, so the scripts describe a shape of test
-rather than a particular system.
+Treat the scripts as starting points. The numbers they produce depend on your
+LPAR, your workload, and where the load generator sits, so they are not comparable
+across installations. Host names, user ids, and qualifiers all come from the
+environment.

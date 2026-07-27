@@ -7,22 +7,20 @@ description: What moves cleanly from WSim, TPNS, and JMeter to k6, and what does
 # From JMeter and TPNS
 
 <p class="lede">Most of what a WSim or JMeter test plan does has a direct equivalent in k6. The
-parts that do not are worth knowing before you start, because they are the parts
-that decide whether the migration is worth doing.</p>
+parts that do not are the ones that decide whether the migration is worth doing.</p>
 
 ## What the old tools do well
 
-Give TPNS and WSim their due. They speak 3270 natively, they run on the host with
-no network between the driver and the system under test, and they have three
-decades of operational knowledge behind them. If you have working WSim scripts and
-people who maintain them, there is no urgency here.
+TPNS and WSim speak 3270 natively, run on the host with no network between the
+driver and the system under test, and carry decades of operational knowledge. If
+you have working WSim scripts and people who maintain them, there is no urgency
+here.
 
-JMeter is fine at HTTP, has a large plugin ecosystem, and a GUI that lowers the
-floor for people who do not write code.
+JMeter handles HTTP well, has a large plugin ecosystem, and its GUI lets people
+who do not write code build test plans.
 
-The case for moving is not that those tools are bad. It is that mainframe test
-results tend to live in a separate world from every other test result in the
-organisation, and that separation is what costs you.
+What usually motivates a move is that mainframe test results end up isolated from
+every other performance result in the organisation.
 
 ## The mapping
 
@@ -42,8 +40,8 @@ organisation, and that separation is what costs you.
 ### Load shape
 
 WSim controls arrival with delays inside the script. JMeter mostly controls it with
-thread count, which is a different thing and a common source of bad numbers: more
-threads under a slow response time means less load, not more.
+thread count. Those are not the same: more threads under a slow response time
+produces less load, not more.
 
 k6 separates the two. `constant-arrival-rate` holds the request rate steady no
 matter what the response time does, which is what you want when the question is
@@ -60,8 +58,7 @@ scenarios: {
 },
 ```
 
-Pick the one that matches the question. Getting this wrong is the single most
-common reason a load test produces a number nobody trusts.
+Pick the one that matches the question you are asking.
 
 ### Assertions
 
@@ -84,9 +81,8 @@ thresholds: {
 },
 ```
 
-If a threshold is breached, k6 exits non-zero. That one behaviour is what lets a
-mainframe test gate a pipeline, which neither WSim nor a JMeter GUI run does
-without extra work.
+If a threshold is breached, k6 exits non-zero, which is what lets a mainframe test
+gate a pipeline. Neither WSim nor a JMeter GUI run does that without extra work.
 
 ### Screen handling
 
@@ -101,8 +97,8 @@ session.enter();
 session.waitForField();
 ```
 
-The field auto-advance rule is the same rule WSim scripts live with, and it bites
-the same way. See [TN3270]({{ '/tn3270/' | relative_url }}).
+The field auto-advance rule is the same one WSim scripts deal with. See
+[TN3270]({{ '/tn3270/' | relative_url }}).
 
 ### Results
 
@@ -115,8 +111,7 @@ k6 run --out opentelemetry scripts/zosmf/mixed-workload.js
 ```
 
 Mainframe response time ends up on the same Grafana dashboard as the API in front
-of it and the database behind it. That is the actual payoff, and it is hard to get
-any other way.
+of it and the database behind it.
 
 ## What does not move
 
@@ -135,15 +130,12 @@ the rewrite to surface assumptions nobody remembered were there.
 
 **The GUI.** If test authoring has to be point and click, k6 is the wrong tool.
 
-## A migration that works
+## Where to start
 
-Take one transaction you already have a WSim or JMeter test for. Write the k6
-version. Run both against the same environment at the same load and compare.
+Take one transaction you already have a WSim or JMeter test for, write the k6
+version, and run both against the same environment at the same load.
 
-The comparison is the point. It tells you whether the k6 script is measuring what
-the old one measured, and it gives you something concrete to show the people who
-have to sign off on replacing a tool that has worked since 1976. Do not skip
-straight to migrating the suite.
-
-Once one transaction matches, the second is quick, because the connection handling
-and the thresholds are already written.
+Comparing the two results tells you whether the k6 script measures what the old one
+measured, and gives you evidence for the people who have to approve replacing a
+tool that has worked since 1976. After the first transaction matches, the rest go
+faster, since the connection handling and thresholds are already written.

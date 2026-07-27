@@ -7,8 +7,8 @@ description: Driving z/OS data sets, JES, and operator commands as shell command
 # ZOAU
 
 <p class="lede">IBM Z Open Automation Utilities exposes data sets, jobs, and the operator console
-as ordinary z/OS UNIX commands. Any transport that can run a shell command becomes
-a usable test driver, which means SSH from anywhere, or a local fork on the host.</p>
+as ordinary z/OS UNIX commands, so any transport that can run a shell command can
+drive them: SSH from off-platform, or a local fork on the host.</p>
 
 ## What the scripts cover
 
@@ -55,9 +55,9 @@ calling <code>connect()</code> replaces the first VU's session mid-iteration. Al
 SSH scripts here run at <code>vus: 1</code> and you should not raise it.</p>
 </div>
 
-This is not a bug in the scripts, it is how the extension registers itself with k6.
-An extension that implements k6's `Module` interface gets a fresh instance per VU;
-one that registers a plain value does not, and xk6-ssh registers a plain value.
+The cause is how the extension registers itself with k6. An extension implementing
+k6's `Module` interface gets a fresh instance per VU; one that registers a plain
+value does not, and xk6-ssh registers a plain value.
 
 To generate real concurrency over SSH, run several k6 processes. If you want
 concurrency inside one process, use z/OSMF instead, where every VU has its own HTTP
@@ -89,7 +89,7 @@ Set `ZOAU_HOME` if yours is not at `/usr/lpp/IBM/zoau`.
 diagnostics to stderr, where you cannot see them. A failing command comes back as
 an empty string with no reason attached.
 
-The fix is to fold both into the output:
+Folding both into stdout works around it:
 
 ```javascript
 export function instrumented(command) {
@@ -98,8 +98,8 @@ export function instrumented(command) {
 ```
 
 `parseResult` then splits the return code off the last line and counts a non-zero
-as a failure. It is not elegant, but the alternative is a test that reports success
-for every command that fails.
+as a failure. Without it, a failing command is indistinguishable from one that
+returned nothing.
 
 ## Submitting a job
 
@@ -123,9 +123,8 @@ run(`cat > ${path} <<'ENDJCL'\n${jcl}\nENDJCL`, 'stage jcl');
 `jls` reports a finished job with status `CC` and the return code in the next
 column. `ABEND` and `JCLERR` are the two terminal failures.
 
-This is the same measurement as `scripts/zosmf/job-submit.js` taken through a
-different door. Running both tells you how much of the turnaround is JES and how
-much is the z/OSMF server in front of it.
+This is the same measurement `scripts/zosmf/job-submit.js` takes over a different
+transport. Running both separates JES turnaround from z/OSMF's own overhead.
 
 ## Natively, with no SSH hop
 
@@ -163,5 +162,5 @@ failing command returns an empty result and the reason is lost.
 | Measuring ZOAU itself without network in the way | exec on the host |
 | No ZOAU licence | z/OSMF only |
 
-ZOAU is a licensed IBM product. If it is not installed, everything on this page is
-unavailable and [z/OSMF]({{ '/zosmf/' | relative_url }}) is the route.
+ZOAU is a licensed IBM product. Without it, use
+[z/OSMF]({{ '/zosmf/' | relative_url }}) instead.

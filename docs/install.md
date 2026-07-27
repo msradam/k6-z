@@ -58,9 +58,9 @@ tar xzf k6-z-v1.0.0-linux-s390x.tar.gz
 
 The same archive works on a Linux on Z guest under z/VM, on a native LPAR, and
 inside [z/OS Container Extensions](https://www.ibm.com/products/zcx), which runs
-Linux `s390x` containers on z/OS. zCX is worth knowing about: it puts the load
-generator on the same box as the system under test without putting it in z/OS
-UNIX, so network latency stops being a variable in the measurement.
+Linux `s390x` containers on z/OS. zCX puts the load generator on the same box as
+the system under test without putting it in z/OS UNIX, which removes network
+latency from the measurement.
 
 ## z/OS UNIX
 

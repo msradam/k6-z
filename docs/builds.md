@@ -7,8 +7,8 @@ description: How the s390x binaries are built, why xk6 cannot build them, and wh
 # Builds and s390x
 
 <p class="lede">Upstream k6 publishes binaries for linux amd64 and arm64, macOS, and Windows. It
-publishes nothing for s390x. This repository fills that gap, and the way it does so
-is worth explaining because the obvious route does not work.</p>
+publishes nothing for s390x. This repository builds it, using a route that is not
+the documented one, for reasons covered below.</p>
 
 ## What gets published
 
@@ -106,9 +106,8 @@ dist/k6-z: ELF 64-bit MSB executable, IBM S/390, version 1 (SYSV),
 statically linked, stripped
 ```
 
-Committing `go.sum` is the part that matters. It is what makes a release
-reproducible from public sources, which is also how the AGPL obligation on the
-binaries is met.
+The committed `go.sum` is what makes a release reproducible from public sources,
+which is also how the AGPL obligation on the binaries is met.
 
 ## Adding an extension
 
@@ -134,7 +133,7 @@ gh attestation verify k6 --repo msradam/k6-z
 ```
 
 The attestation ties the binary to the workflow run and the commit that produced
-it. Worth checking before you copy something onto a mainframe.
+it.
 
 ## z/OS {#z-os}
 
@@ -169,9 +168,8 @@ find . -name 'go.sum' -exec chtag -tc 1208 {} \;
 The tagging matters: z/OS UNIX tracks file encoding, and untagged Go source is read
 as EBCDIC. The same applies to your test scripts.
 
-For most tests, running off-platform or in zCX is both simpler and a better
-measurement, because it keeps the load generator's own CPU consumption out of the
-system under test.
+Running off-platform or in zCX is simpler, and it keeps the load generator's own
+CPU consumption out of the system under test.
 
 ## Release process
 
@@ -185,5 +183,4 @@ git push origin v1.0.0
 
 CI on every pull request compiles both bundles, cross-compiles for s390x, amd64,
 and arm64, runs `k6 archive` over every sample script, and runs the z/OSMF samples
-against the mock server. A script that does not compile, or an s390x build that
-breaks, fails before it reaches a release.
+against the mock server.

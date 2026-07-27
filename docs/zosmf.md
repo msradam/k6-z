@@ -8,7 +8,7 @@ description: Driving jobs, data sets, USS files, and operator commands over the 
 
 <p class="lede">The z/OS Management Facility exposes JES, the catalog, the file system, and the
 operator console as REST services over HTTPS. It needs no extension, so plain
-upstream k6 can drive it, and it is the right place to start.</p>
+upstream k6 can drive it.</p>
 
 ## What the scripts cover
 
@@ -28,7 +28,7 @@ endpoints.
 
 ## Endpoints used
 
-Nothing here is undocumented. These are the published z/OSMF REST services:
+These are the published z/OSMF REST services:
 
 | Service | Path |
 | --- | --- |
@@ -44,7 +44,7 @@ Nothing here is undocumented. These are the published z/OSMF REST services:
 | List a directory | `GET /zosmf/restfiles/fs?path=` |
 | Operator command | `PUT /zosmf/restconsoles/consoles/{name}` |
 
-## Two things that catch people out
+## Two request requirements
 
 **Every request needs the CSRF header.** z/OSMF rejects requests without
 `X-CSRF-ZOSMF-HEADER`. The value is ignored; only its presence is checked. The
@@ -118,8 +118,8 @@ fast work shows up, not how many connections are open, so the script uses
 
 <div class="callout callout-warn">
 <p>The script purges the jobs it submits. Leaving thousands of held output data
-sets behind is how a load test turns into a spool-full incident on a shared LPAR.
-If you change the script to skip the purge, make sure something else cleans up.</p>
+sets behind can fill the spool on a shared LPAR. If you change the script to skip
+the purge, make sure something else cleans up.</p>
 </div>
 
 ## Operator commands
@@ -140,15 +140,15 @@ The console service runs whatever you send it with the authority of the user you
 authenticated as. Treat any change to that list the way you would treat a change to
 a production runbook.
 
-Concurrency stays low on purpose. Operator commands are serialised by the console,
-so running many at once measures the console's queue rather than the system's
-ability to answer.
+Concurrency is kept low because operator commands are serialised by the console.
+Running many at once measures the console's queue rather than the system's ability
+to answer.
 
 ## Writes are opt-in
 
 `datasets.js` and `uss.js` are read-only unless you set `ZOS_ALLOW_WRITE=true` and
-name a target. A load test that writes to a cataloged data set on someone else's
-LPAR is an incident, not a test.
+name a target, so that a misconfigured run cannot write to a cataloged data set on
+a system you do not own.
 
 ## Running a realistic profile
 
@@ -185,7 +185,7 @@ python3 tools/mock-zosmf.py --port 10443 --verbose
 make test
 ```
 
-It is not an emulator. Nothing it returns is evidence about how a real z/OSMF
-behaves under load. What it is good for is checking that a script does what you
-think before it touches a real system, and for letting someone review the scripts
-without needing access to anything.
+It is not an emulator, and nothing it returns says anything about how a real
+z/OSMF performs. Use it to check that a script does what you expect before it
+touches a real system, and to let people review the scripts without needing an
+account anywhere.
