@@ -487,10 +487,24 @@ a:hover {
 }
 
 /* Wide content scrolls inside its own box so the page never scrolls sideways. */
-.table-wrap,
 .content pre {
   overflow-x: auto;
   max-width: 100%;
+}
+
+/* Narrow screens cannot fit these tables at any sensible font size, so the table
+   itself becomes the scroll container. display:block is what makes a table
+   scrollable; the rows still lay out through anonymous table boxes. */
+@media (max-width: 700px) {
+  .content table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .content td code {
+    white-space: normal;
+  }
 }
 
 /* Code */
