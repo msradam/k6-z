@@ -1,8 +1,8 @@
 # k6-z
 
-Load testing IBM z/OS with [Grafana k6](https://k6.io). Sample scripts for the
-interfaces a z/OS system actually exposes, and prebuilt binaries for `s390x`, which
-upstream k6 does not publish.
+k6-z is a set of [Grafana k6](https://k6.io) test scripts and prebuilt binaries for
+load testing IBM z/OS. It covers the four interfaces a z/OS system exposes to a
+test driver, and ships k6 binaries for `s390x`, which upstream k6 does not publish.
 
 **Documentation: [msradam.github.io/k6-z](https://msradam.github.io/k6-z/)**
 

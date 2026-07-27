@@ -6,11 +6,11 @@ description: How the s390x binaries are built, why xk6 cannot build them, and wh
 
 # Builds and s390x
 
-<p class="lede">Upstream k6 publishes binaries for linux amd64 and arm64, macOS, and Windows. It
-publishes nothing for s390x. This repository builds it, using a route that is not
-the documented one, for reasons covered below.</p>
+<p class="lede">Upstream k6 publishes binaries for linux amd64 and arm64, macOS, and Windows, but
+not for s390x. This page describes how the s390x archives here are produced, why
+<code>xk6 build</code> cannot produce them, and what applies to z/OS.</p>
 
-## What gets published
+## Published archives
 
 Every release builds two bundles for four platforms.
 
@@ -46,7 +46,7 @@ migration for the two remaining extensions is mechanical, a find and replace of
 generated methods, which 2.0 removed in favour of `encoding/json`. When that lands,
 the two archives become one.
 
-## Why not xk6
+## Why xk6 cannot target s390x
 
 The documented way to build a custom k6 is `xk6 build`. It refuses:
 
@@ -63,7 +63,7 @@ and no `zos` either.
 The restriction is in the builder, not in k6 or in Go. Go itself cross-compiles to
 `linux/s390x` without complaint, and k6 is pure Go with cgo disabled.
 
-## What this repository does instead
+## How the bundles are built
 
 xk6 generates a small main package that imports k6's command package and
 blank-imports each extension, then builds it. That generated package is about
@@ -109,7 +109,7 @@ statically linked, stripped
 The committed `go.sum` is what makes a release reproducible from public sources,
 which is also how the AGPL obligation on the binaries is met.
 
-## Adding an extension
+## Add an extension
 
 ```bash
 cd bundles/k6z
@@ -122,7 +122,7 @@ go build -o ../../dist/k6-z .
 If `go mod tidy` pulls in a conflicting k6 major version, the extension is not
 compatible with that bundle and belongs in the other one.
 
-## Verifying a release
+## Verify a release
 
 Each archive is checksummed, and each binary carries a GitHub build provenance
 attestation:
@@ -171,7 +171,7 @@ as EBCDIC. The same applies to your test scripts.
 Running off-platform or in zCX is simpler, and it keeps the load generator's own
 CPU consumption out of the system under test.
 
-## Release process
+## Cut a release
 
 Tag and push. The workflow builds eight archives, attests each binary, and creates
 the release.

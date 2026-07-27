@@ -6,10 +6,11 @@ description: Getting a k6 binary that can talk to z/OS, whether you run it off-p
 
 # Install
 
-<p class="lede">Which binary you need depends on two things: where the load generator runs, and
-which of the four z/OS interfaces you want to drive.</p>
+<p class="lede">The binary you need depends on where the load generator runs and which z/OS
+interfaces you want to drive. This page covers the release archives, building your
+own, and running k6 on z/OS UNIX.</p>
 
-## Pick a binary
+## Choose a binary
 
 | You need | Use |
 | --- | --- |
@@ -24,7 +25,7 @@ not yet. A single binary can link one or the other, not both, so `k6-z` tracks
 current k6 and `k6-z-3270` stays on k6 1.x until the extensions move. See
 [builds]({{ '/builds/' | relative_url }}).
 
-## Off-platform, which is where most tests belong
+## Install off-platform
 
 The common arrangement is k6 on x86 or ARM, driving the mainframe over the network.
 That is the right default. It keeps load off the system under test, it lets you run
@@ -46,7 +47,7 @@ brew install k6
 # or see https://grafana.com/docs/k6/latest/set-up/install-k6/
 ```
 
-## Linux on Z and zCX
+## Install on Linux on Z or zCX
 
 Upstream k6 publishes no `s390x` binary. This repository does.
 
@@ -62,7 +63,7 @@ Linux `s390x` containers on z/OS. zCX puts the load generator on the same box as
 the system under test without putting it in z/OS UNIX, which removes network
 latency from the measurement.
 
-## z/OS UNIX
+## Install on z/OS UNIX
 
 k6 runs natively on z/OS. The port is maintained by the
 [z/OS Open Tools](https://zopen.community) community:
@@ -104,7 +105,7 @@ This path is more involved than the others and there is no prebuilt archive for 
 For most tests, running off-platform or in zCX is both easier and a better
 measurement.
 
-## Building your own bundle
+## Build your own binary
 
 The two release bundles are ordinary Go modules under `bundles/`. Each is a
 `main.go` that imports k6's command package and blank-imports the extensions, plus
@@ -145,7 +146,7 @@ sha256sum -c checksums.txt --ignore-missing
 gh attestation verify k6 --repo msradam/k6-z
 ```
 
-## Credentials
+## Supply credentials
 
 No script in this repository contains a password. Credentials come from the
 environment:

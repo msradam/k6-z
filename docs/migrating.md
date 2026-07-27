@@ -6,10 +6,10 @@ description: What moves cleanly from WSim, TPNS, and JMeter to k6, and what does
 
 # From JMeter and TPNS
 
-<p class="lede">Most of what a WSim or JMeter test plan does has a direct equivalent in k6. The
-parts that do not are the ones that decide whether the migration is worth doing.</p>
+<p class="lede">Most of what a WSim, TPNS, or JMeter test plan does has a direct equivalent in k6.
+This page maps the concepts, and lists what has no equivalent.</p>
 
-## What the old tools do well
+## What the existing tools do well
 
 TPNS and WSim speak 3270 natively, run on the host with no network between the
 driver and the system under test, and carry decades of operational knowledge. If
@@ -22,7 +22,7 @@ who do not write code build test plans.
 What usually motivates a move is that mainframe test results end up isolated from
 every other performance result in the organisation.
 
-## The mapping
+## Concept mapping
 
 | WSim / TPNS | JMeter | k6 |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ every other performance result in the organisation.
 | Message log analysis | Listeners, HTML report | Prometheus, OpenTelemetry, JSON, Grafana Cloud |
 | Host-resident execution | JVM per load generator | One static binary, anywhere including s390x |
 
-## Concept by concept
+## Details
 
 ### Load shape
 
@@ -113,7 +113,7 @@ k6 run --out opentelemetry scripts/zosmf/mixed-workload.js
 Mainframe response time ends up on the same Grafana dashboard as the API in front
 of it and the database behind it.
 
-## What does not move
+## What has no equivalent
 
 **Native 3270 printer and non-SNA device simulation.** WSim simulates a wide range
 of terminal and printer device types. xk6-tn3270 does displays, models 2 through 5.

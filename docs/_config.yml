@@ -24,9 +24,9 @@ exclude:
   - vendor
 
 nav:
-  - group: Start here
+  - group: Get started
     items:
-      - { title: Why k6 on z/OS, url: / }
+      - { title: Overview, url: / }
       - { title: Install, url: /install/ }
       - { title: From JMeter and TPNS, url: /migrating/ }
   - group: Test surfaces
@@ -36,5 +36,6 @@ nav:
       - { title: ZOAU, url: /zoau/ }
   - group: Reference
     items:
+      - { title: Configuration, url: /configuration/ }
       - { title: k6 2.x features, url: /k6-features/ }
       - { title: Builds and s390x, url: /builds/ }

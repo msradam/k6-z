@@ -6,11 +6,11 @@ description: The parts of current k6 that matter most when the system under test
 
 # k6 2.x features
 
-<p class="lede">k6 2.0 landed in May 2026 and 2.1 in June. Most of what changed is cleanup, but a
-few things matter directly for mainframe work, and one of them decides which binary
-you can use.</p>
+<p class="lede">k6 2.0 was released in May 2026 and 2.1 in June. This page covers the changes that
+affect the scripts in this repository, and the module path change that determines
+which binary can run them.</p>
 
-## The module path change, and why there are two bundles
+## Module path change
 
 k6 2.0 moved its Go module path from `go.k6.io/k6` to `go.k6.io/k6/v2`. For an
 extension author this is a find and replace. For anyone assembling a binary it is a
@@ -80,7 +80,7 @@ One thing 2.0 removed: the `externally-controlled` executor, along with
 `k6 pause`, `k6 resume`, `k6 scale`, and `k6 status`. If you had a harness driving
 those, it needs rewriting around the normal executors.
 
-## Thresholds set the exit code
+## Set the exit code with thresholds
 
 ```javascript
 thresholds: {
@@ -111,7 +111,7 @@ interesting behaviour is at p99 and beyond. Fixed bucket boundaries either lose
 resolution where you need it or cost cardinality everywhere else. Still
 experimental, so measure before relying on it.
 
-## Automatic extension resolution
+## Resolve extensions automatically
 
 k6 sees an import of `k6/x/something` and provisions a binary that has it, without
 you running `xk6 build`:
@@ -143,7 +143,7 @@ Two 2.0 changes to note: `K6_OTEL_EXPORTER_TYPE` is now
 `K6_OTEL_EXPORTER_PROTOCOL` with values `grpc` or `http/protobuf`, and rate metrics
 always export as a single counter with a `condition` attribute.
 
-## Custom summaries
+## Write a custom summary
 
 ```javascript
 export function handleSummary(data) {
@@ -177,7 +177,7 @@ report to a file.
 
 Full detail in the [k6 v2.0.0 release notes](https://github.com/grafana/k6/releases/tag/v2.0.0).
 
-## For agents driving k6
+## Discover subcommands from an agent
 
 k6 2.1 made `k6 x` self-describing: running it lists the extension subcommands the
 binary has, including `k6 x mcp`, an MCP server, and `k6 x docs`. An agent driving

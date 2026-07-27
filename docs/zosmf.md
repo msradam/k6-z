@@ -1,75 +1,79 @@
 ---
 layout: default
 title: z/OSMF REST
-description: Driving jobs, data sets, USS files, and operator commands over the documented z/OSMF REST services.
+description: Load testing jobs, data sets, USS files, and operator commands through the z/OSMF REST services.
 ---
 
 # z/OSMF REST
 
-<p class="lede">The z/OS Management Facility exposes JES, the catalog, the file system, and the
-operator console as REST services over HTTPS. It needs no extension, so plain
-upstream k6 can drive it.</p>
+<p class="lede">The z/OS Management Facility exposes JES, the catalog, the z/OS UNIX file system, and
+the operator console as REST services over HTTPS. These scripts need no k6
+extension, so any k6 binary can run them.</p>
 
-## What the scripts cover
+## Scripts
 
-| Script | What it measures |
+| Script | Executor | Measures |
+| --- | --- | --- |
+| `info.js` | 1 iteration | Host reachable, credentials valid, TLS negotiated |
+| `job-submit.js` | `constant-arrival-rate` | JES turnaround: submit, poll, read spool, purge |
+| `job-query.js` | `ramping-vus` | Reading the output queue and spool. Read-only |
+| `datasets.js` | `constant-vus` | Catalog search, member listing, member read |
+| `uss.js` | `constant-vus` | Directory listing and file read |
+| `console.js` | `constant-vus` | MVS operator display commands |
+| `mixed-workload.js` | three scenarios | All three profiles concurrently |
+| `auth-secrets.js` | 3 iterations | Authentication using a k6 secret source |
+
+All of them import `scripts/lib/zosmf.js`, a client over the endpoints below.
+
+## Endpoints
+
+| Operation | Method and path |
 | --- | --- |
-| `info.js` | Smoke test. Host answers, credentials work, TLS negotiates |
-| `job-submit.js` | JES turnaround: submit, poll to completion, read spool, purge |
-| `job-query.js` | Read-only browsing of the output queue and spool |
-| `datasets.js` | Catalog search, member listing, member read |
-| `uss.js` | z/OS UNIX directory listing and file read |
-| `console.js` | MVS operator display commands |
-| `mixed-workload.js` | All three profiles at once, each with its own thresholds |
-| `auth-secrets.js` | Credentials from a secret source instead of the environment |
-
-All of them share `scripts/lib/zosmf.js`, a thin client over the documented
-endpoints.
-
-## Endpoints used
-
-These are the published z/OSMF REST services:
-
-| Service | Path |
-| --- | --- |
-| Information | `GET /zosmf/info` |
+| Server information | `GET /zosmf/info` |
 | Submit a job | `PUT /zosmf/restjobs/jobs` |
+| List jobs | `GET /zosmf/restjobs/jobs?owner=&prefix=&max-jobs=` |
 | Job status | `GET /zosmf/restjobs/jobs/{jobname}/{jobid}` |
-| Spool files | `GET /zosmf/restjobs/jobs/{jobname}/{jobid}/files` |
-| Spool content | `GET .../files/{id}/records` |
+| List spool files | `GET /zosmf/restjobs/jobs/{jobname}/{jobid}/files` |
+| Read a spool file | `GET /zosmf/restjobs/jobs/{jobname}/{jobid}/files/{id}/records` |
 | Purge a job | `DELETE /zosmf/restjobs/jobs/{jobname}/{jobid}` |
-| Catalog search | `GET /zosmf/restfiles/ds?dslevel=` |
-| Member list | `GET /zosmf/restfiles/ds/{dsname}/member` |
+| Search the catalog | `GET /zosmf/restfiles/ds?dslevel={pattern}` |
+| List PDS members | `GET /zosmf/restfiles/ds/{dsname}/member` |
 | Read a data set | `GET /zosmf/restfiles/ds/{dsname}` |
-| List a directory | `GET /zosmf/restfiles/fs?path=` |
-| Operator command | `PUT /zosmf/restconsoles/consoles/{name}` |
+| List a directory | `GET /zosmf/restfiles/fs?path={path}` |
+| Read a USS file | `GET /zosmf/restfiles/fs{path}` |
+| Issue a console command | `PUT /zosmf/restconsoles/consoles/{name}` |
 
-## Two request requirements
+## Required request headers
 
-**Every request needs the CSRF header.** z/OSMF rejects requests without
-`X-CSRF-ZOSMF-HEADER`. The value is ignored; only its presence is checked. The
-mock server in `tools/` enforces the same rule, so a script that forgets it fails
-locally rather than against the LPAR.
+z/OSMF rejects any request without `X-CSRF-ZOSMF-HEADER`. The value is ignored;
+only the header's presence is checked. `scripts/lib/zosmf.js` adds it to every
+request:
 
-**Do not put credentials in the URL.** k6 tags every request with its URL, so
-`https://user:pass@host` puts the password into the metric stream and into any
-exported summary. The library builds an `Authorization` header instead:
+```javascript
+const CSRF = { 'X-CSRF-ZOSMF-HEADER': '' };
+```
+
+Credentials go in an `Authorization` header rather than in the URL. k6 tags every
+request with its URL, so `https://user:pass@host` would put the password into the
+metric stream and into any exported summary.
 
 ```javascript
 const AUTHORIZATION = `Basic ${encoding.b64encode(`${zosmf.user}:${zosmf.password}`)}`;
 ```
 
-## Metric cardinality
+The mock server enforces both rules, so a script that omits either fails locally.
 
-Data set names and job ids vary per iteration. If they end up in the URL that k6
-tags with, every one of them becomes its own time series and the metric stream
-grows with the test. Passing a stable `name` tag fixes it:
+## Control metric cardinality with the name tag
+
+k6 tags each request with its URL. Data set names and job ids vary per iteration,
+so tagging on the raw URL creates one time series per resource. Pass a stable
+`name` tag instead:
 
 ```javascript
 request('GET', `/zosmf/restfiles/ds/${dsname}`, null, { name: 'read data set' });
 ```
 
-Thresholds can then target one operation without naming any particular data set:
+Thresholds can then target a single operation without naming a resource:
 
 ```javascript
 thresholds: {
@@ -78,10 +82,21 @@ thresholds: {
 }
 ```
 
-## Submitting a job
+## Metrics
 
-The internal reader needs record attributes on the request. Fixed 80-byte records
-in text mode is what a card reader has always presented to JES:
+`scripts/lib/zosmf.js` defines these in addition to k6's built-in HTTP metrics.
+
+| Metric | Type | Description |
+| --- | --- | --- |
+| `zosmf_request_duration` | Trend (ms) | Per-request duration, tagged with `name` |
+| `zosmf_success` | Rate | Proportion of requests returning 2xx |
+| `zosmf_errors` | Counter | Non-2xx responses, tagged with `name` and `status` |
+| `zos_job_turnaround` | Trend (ms) | Submit to `OUTPUT`, recorded by `waitForJob()` |
+
+## Submit a job and wait for it
+
+To submit JCL inline, set the internal reader attributes on the request. Fixed
+80-byte records in text mode is what JES expects from a card reader:
 
 ```javascript
 export function submitJcl(jcl) {
@@ -97,11 +112,11 @@ export function submitJcl(jcl) {
 }
 ```
 
-The default job is `IEFBR14`, which does nothing and returns zero. That is
-deliberate. It isolates submission, scheduling, and spool handling from whatever an
-application would have done, which is the number you want when you are sizing JES
-rather than testing a program. Set `ZOS_JOB_WITH_OUTPUT=true` for an `IEBGENER` job
-that produces real spool output instead.
+A successful submit returns 201 and a job document containing `jobname` and
+`jobid`. `waitForJob()` polls `GET /zosmf/restjobs/jobs/{jobname}/{jobid}` until
+`status` becomes `OUTPUT`, then records `zos_job_turnaround`.
+
+Run the script:
 
 ```bash
 k6 run \
@@ -112,20 +127,31 @@ k6 run \
   scripts/zosmf/job-submit.js
 ```
 
-Arrival rate, not VU count, is the knob. JES queue behaviour is a function of how
-fast work shows up, not how many connections are open, so the script uses
-`constant-arrival-rate`.
+The script uses `constant-arrival-rate` rather than a VU count, because JES queue
+depth is a function of submission rate.
+
+The default job is `IEFBR14`, which allocates nothing and returns zero, so the
+measurement covers submission, scheduling, and spool handling rather than any
+application. Set `ZOS_JOB_WITH_OUTPUT=true` to submit an `IEBGENER` job that
+produces real spool output.
+
+To submit JCL that already exists on the host, use the JSON form:
+
+```javascript
+submitDataset("IBMUSER.JCL(COMPILE)");
+// PUT /zosmf/restjobs/jobs  {"file": "//'IBMUSER.JCL(COMPILE)'"}
+```
 
 <div class="callout callout-warn">
-<p>The script purges the jobs it submits. Leaving thousands of held output data
-sets behind can fill the spool on a shared LPAR. If you change the script to skip
-the purge, make sure something else cleans up.</p>
+<p>The script purges every job it submits. A run at 12 jobs a minute for an hour
+leaves 720 held output data sets if the purge is removed. If you change that
+step, arrange for something else to clean up.</p>
 </div>
 
-## Operator commands
+## Issue operator commands
 
-`console.js` issues display commands and checks for the message id in the response.
-Every command in its list reads system state and changes nothing:
+`console.js` sends display commands and asserts on the message id in the
+response:
 
 ```javascript
 const COMMANDS = [
@@ -136,36 +162,46 @@ const COMMANDS = [
 ];
 ```
 
-The console service runs whatever you send it with the authority of the user you
-authenticated as. Treat any change to that list the way you would treat a change to
-a production runbook.
+The response body contains `cmd-response` for commands that answer immediately.
+Commands whose messages arrive later return `cmd-response-key`, which the script
+passes to `GET /zosmf/restconsoles/consoles/{name}/solmsgs/{key}`.
 
-Concurrency is kept low because operator commands are serialised by the console.
-Running many at once measures the console's queue rather than the system's ability
-to answer.
+The console service runs any command you send with the authority of the
+authenticated user. The list above contains display commands only.
 
-## Writes are opt-in
+`setup()` issues `D T` first and fails with a clear message if the user lacks
+CONSOLE authority in RACF.
 
-`datasets.js` and `uss.js` are read-only unless you set `ZOS_ALLOW_WRITE=true` and
-name a target, so that a misconfigured run cannot write to a cataloged data set on
-a system you do not own.
+Concurrency defaults to 2 VUs because the console serialises commands. Higher
+values measure the console's queue rather than the system's response.
 
-## Running a realistic profile
+## Enable writes explicitly
 
-`mixed-workload.js` is the shape most mainframe tests actually need: batch
-submission, catalog searches, and operator commands running at the same time, each
-with its own arrival pattern and its own thresholds.
+`datasets.js` and `uss.js` are read-only unless you set both variables:
+
+```bash
+k6 run -e ZOS_ALLOW_WRITE=true -e ZOS_WRITE_TARGET='IBMUSER.K6.TEST' \
+  scripts/zosmf/datasets.js
+```
+
+Without `ZOS_WRITE_TARGET`, the script throws rather than guessing a data set
+name.
+
+## Run several load profiles at once
+
+`mixed-workload.js` runs three scenarios concurrently, each with its own executor
+and its own `workload` tag:
 
 ```javascript
 scenarios: {
-  batch:    { executor: 'constant-arrival-rate', exec: 'batchSubmission', rate: 4, timeUnit: '1m', ... },
-  catalog:  { executor: 'ramping-vus', exec: 'catalogSearch', stages: [...] },
-  operator: { executor: 'constant-vus', exec: 'operatorCommand', vus: 1, startTime: '1m', ... },
+  batch:    { executor: 'constant-arrival-rate', exec: 'batchSubmission', rate: 4, timeUnit: '1m' },
+  catalog:  { executor: 'ramping-vus', exec: 'catalogSearch' },
+  operator: { executor: 'constant-vus', exec: 'operatorCommand', vus: 1, startTime: '1m' },
 }
 ```
 
-Running them as one flat VU count hides which of the three is the bottleneck.
-Per-scenario tags let each one carry its own budget:
+Because each scenario tags its requests, thresholds can hold each to a separate
+budget:
 
 ```javascript
 thresholds: {
@@ -174,18 +210,37 @@ thresholds: {
 }
 ```
 
-## Testing without a mainframe
+The script also defines `handleSummary()` to print the four numbers a capacity
+review needs and write the full report to `summary.json`.
 
-`tools/mock-zosmf.py` answers the same request shapes as the real service, with a
-job queue that moves submissions from `INPUT` through `ACTIVE` to `OUTPUT` over a
-few seconds. It is stdlib Python with no dependencies.
+## Run without a mainframe
+
+`tools/mock-zosmf.py` implements the endpoints above using only the Python
+standard library. Its job queue moves a submission from `INPUT` through `ACTIVE`
+to `OUTPUT` over about two seconds, and it seeds three jobs at startup so the
+read-only scripts have something to browse.
 
 ```bash
 python3 tools/mock-zosmf.py --port 10443 --verbose
+```
+
+To run the whole z/OSMF set against it:
+
+```bash
 make test
 ```
 
-It is not an emulator, and nothing it returns says anything about how a real
-z/OSMF performs. Use it to check that a script does what you expect before it
-touches a real system, and to let people review the scripts without needing an
-account anywhere.
+The mock is not an emulator. Its response times say nothing about a real z/OSMF.
+Use it to verify that a script behaves as expected before it reaches a real
+system.
+
+## Troubleshooting
+
+| Symptom | Cause |
+| --- | --- |
+| 401 on every request | `ZOS_PASSWORD` unset or wrong, or the user is revoked in RACF |
+| 400 with `missing X-CSRF-ZOSMF-HEADER` | Request built without `scripts/lib/zosmf.js` |
+| TLS handshake failure | z/OSMF certificate not in the load generator's trust store. Confirm with `ZOS_TLS_INSECURE=true`, then fix the trust store |
+| 403 from the console service | User lacks CONSOLE authority in RACF |
+| `job-query.js` throws in `setup()` | No jobs match `ZOS_JOB_OWNER` and `ZOS_JOB_PREFIX` |
+| Catalog search times out | `ZOS_DSLEVEL` is too broad. Narrow the qualifier |
