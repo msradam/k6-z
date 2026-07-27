@@ -516,6 +516,9 @@ a:hover {
   color: var(--accent-alt);
   padding: 0.15em 0.4em;
   border-radius: 2px;
+  /* Endpoint paths are long unbreakable tokens. Without this they push the page
+     wider than a phone viewport. */
+  overflow-wrap: break-word;
 }
 
 .content pre {
@@ -534,6 +537,8 @@ a:hover {
   padding: 0;
   font-size: inherit;
   color: var(--text);
+  /* Code blocks scroll instead of wrapping, so line breaks stay meaningful. */
+  overflow-wrap: normal;
 }
 
 /* Rouge tokens. Both themes are covered because the --code-* values flip with
