@@ -4,7 +4,7 @@ title: Why k6 on z/OS
 description: Load testing IBM z/OS with Grafana k6, using only publicly documented APIs and commands.
 ---
 
-<p class="eyebrow">Grafana k6 on IBM z/OS</p>
+<p class="eyebrow">z/OSMF · TN3270 · ZOAU · s390x</p>
 
 # Load testing the mainframe with k6
 

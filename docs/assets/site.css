@@ -338,7 +338,7 @@ a:hover {
   background: var(--line);
 }
 
-.sidebar-label + .sidebar-label {
+.sidebar ul + .sidebar-label {
   margin-top: var(--step-6);
 }
 
@@ -560,9 +560,13 @@ a:hover {
   max-width: 62ch;
 }
 
+.lede + h2 {
+  margin-top: var(--step-6);
+}
+
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--step-3);
   margin: var(--step-6) 0 var(--step-7);
   padding: 0;
