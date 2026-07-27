@@ -196,6 +196,24 @@ class Handler(BaseHTTPRequestHandler):
         body = self.read_body()
 
         if path == "/zosmf/restjobs/jobs":
+            content_type = self.headers.get("Content-Type", "")
+
+            # Inline JCL goes through the internal reader, which needs the record
+            # attributes. The JSON form points at JCL already on the host and does
+            # not. Checking here means a script that drops a header fails against
+            # the mock rather than against a real system.
+            if content_type.startswith("text/plain"):
+                missing = [
+                    h for h in ("X-IBM-Intrdr-Recfm",
+                                "X-IBM-Intrdr-Lrecl",
+                                "X-IBM-Intrdr-Mode")
+                    if h not in self.headers
+                ]
+                if missing:
+                    return self.send_json(500, {
+                        "reason": f"internal reader headers missing: {', '.join(missing)}",
+                    })
+
             name_match = re.search(r"^//(\S{1,8})\s+JOB", body, re.MULTILINE)
             jobname = name_match.group(1) if name_match else "K6JOB"
             jobid = next_job_id()

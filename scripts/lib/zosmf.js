@@ -52,14 +52,16 @@ export function info() {
   return request('GET', '/zosmf/info', null, { name: 'info' });
 }
 
-// Submitting JCL inline needs the internal reader attributes. Fixed 80-byte
-// records in text mode is what a card reader has always presented to JES.
+// Submitting JCL inline needs the internal reader attributes: fixed 80-byte
+// records in text mode. The charset is explicit because z/OSMF otherwise applies
+// its own default to the body. Header set matches Zowe's submitJclCommon.
+// Job class comes from the JOB card built in jcl.js, not from
+// X-IBM-Intrdr-Class, so that ZOS_JOB_CLASS has one place to take effect.
 export function submitJcl(jcl, params = {}) {
   return request('PUT', '/zosmf/restjobs/jobs', jcl, {
     name: 'submit job',
     headers: {
-      'Content-Type': 'text/plain',
-      'X-IBM-Intrdr-Class': 'A',
+      'Content-Type': 'text/plain; charset=utf8',
       'X-IBM-Intrdr-Recfm': 'F',
       'X-IBM-Intrdr-Lrecl': '80',
       'X-IBM-Intrdr-Mode': 'TEXT',

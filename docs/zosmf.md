@@ -102,8 +102,7 @@ To submit JCL inline, set the internal reader attributes on the request. Fixed
 export function submitJcl(jcl) {
   return request('PUT', '/zosmf/restjobs/jobs', jcl, {
     headers: {
-      'Content-Type': 'text/plain',
-      'X-IBM-Intrdr-Class': 'A',
+      'Content-Type': 'text/plain; charset=utf8',
       'X-IBM-Intrdr-Recfm': 'F',
       'X-IBM-Intrdr-Lrecl': '80',
       'X-IBM-Intrdr-Mode': 'TEXT',
@@ -111,6 +110,20 @@ export function submitJcl(jcl) {
   });
 }
 ```
+
+| Header | Value | Purpose |
+| --- | --- | --- |
+| `Content-Type` | `text/plain; charset=utf8` | Body encoding. Without the charset, z/OSMF applies its own default |
+| `X-IBM-Intrdr-Recfm` | `F` | Fixed-length records |
+| `X-IBM-Intrdr-Lrecl` | `80` | 80-byte records |
+| `X-IBM-Intrdr-Mode` | `TEXT` | Text rather than binary |
+
+z/OSMF also accepts `X-IBM-Intrdr-Class` to set the internal reader class. The
+scripts do not send it, because job class is already on the JOB card that
+`scripts/lib/jcl.js` builds from `ZOS_JOB_CLASS`. Sending both invites the two
+values to disagree.
+
+This header set matches the one Zowe CLI sends in `submitJclCommon`.
 
 A successful submit returns 201 and a job document containing `jobname` and
 `jobid`. `waitForJob()` polls `GET /zosmf/restjobs/jobs/{jobname}/{jobid}` until
