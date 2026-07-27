@@ -4,9 +4,6 @@ Load testing IBM z/OS with [Grafana k6](https://k6.io). Sample scripts for the
 interfaces a z/OS system actually exposes, and prebuilt binaries for `s390x`, which
 upstream k6 does not publish.
 
-Everything here uses public APIs and public documentation, so it can be read,
-copied, and run outside IBM.
-
 **Documentation: [msradam.github.io/k6-z](https://msradam.github.io/k6-z/)**
 
 ## Try it without a mainframe
@@ -85,13 +82,15 @@ building on z/OS with extensions.
 ## Scope
 
 The z/OSMF endpoints are the documented REST services. The ZOAU commands are
-display and read commands drawn from IBM's public
+display and read commands drawn from IBM's
 [zoau-samples](https://github.com/IBM/zoau-samples). The TN3270 scripts target
-[Galasa SimBank](https://galasa.dev), which runs on a laptop. No internal system,
-naming convention, or configuration appears anywhere in this repository.
+[Galasa SimBank](https://galasa.dev), which runs on a laptop, so you can get one
+working before going near an LPAR.
 
 The scripts are starting points, not a benchmark suite. Nothing here produces a
-number you should compare against another shop's number.
+number you should compare against another shop's number. Every host name, user id,
+and qualifier comes from the environment, so the scripts describe a shape of test
+rather than a particular system.
 
 ## License
 
