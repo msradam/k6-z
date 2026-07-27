@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to build and publish
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.bundle }} ${{ matrix.platform.goos }}/${{ matrix.platform.goarch }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        bundle: [k6z, k6z-3270]
+        platform:
+          - { goos: linux, goarch: s390x }
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: darwin, goarch: arm64 }
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: bundles/${{ matrix.bundle }}/go.sum
+
+      - name: Resolve names and versions
+        id: meta
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          case "${{ matrix.bundle }}" in
+            k6z)      name=k6-z;      k6=$(awk '/go\.k6\.io\/k6\/v2 v/ {print $2}' bundles/k6z/go.mod) ;;
+            k6z-3270) name=k6-z-3270; k6=$(awk '/go\.k6\.io\/k6 v/ {print $2}' bundles/k6z-3270/go.mod) ;;
+          esac
+          archive="${name}-${tag}-${{ matrix.platform.goos }}-${{ matrix.platform.goarch }}"
+          {
+            echo "tag=$tag"
+            echo "name=$name"
+            echo "k6=$k6"
+            echo "archive=$archive"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          mkdir -p stage/"${{ steps.meta.outputs.archive }}"
+          cd bundles/${{ matrix.bundle }}
+          CGO_ENABLED=0 GOOS=${{ matrix.platform.goos }} GOARCH=${{ matrix.platform.goarch }} \
+            go build -trimpath -ldflags="-s -w" \
+            -o ../../stage/"${{ steps.meta.outputs.archive }}"/k6 .
+
+      - name: Stage the archive
+        run: |
+          archive="${{ steps.meta.outputs.archive }}"
+          cp LICENSE NOTICE "stage/$archive/"
+          cat > "stage/$archive/README" <<EOF
+          ${{ steps.meta.outputs.name }} ${{ steps.meta.outputs.tag }}
+          k6 ${{ steps.meta.outputs.k6 }} for ${{ matrix.platform.goos }}/${{ matrix.platform.goarch }}
+
+          Built from https://github.com/${{ github.repository }} at commit ${{ github.sha }}.
+          Run ./k6 version to list the extensions compiled into this binary.
+
+          Documentation: https://msradam.github.io/k6-z/
+          EOF
+          cd stage
+          tar czf "$archive.tar.gz" "$archive"
+          sha256sum "$archive.tar.gz" > "$archive.tar.gz.sha256"
+
+      - name: Attest the binary
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: stage/${{ steps.meta.outputs.archive }}/k6
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.archive }}
+          path: |
+            stage/*.tar.gz
+            stage/*.sha256
+          retention-days: 5
+
+  publish:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Collect checksums
+        run: |
+          cd artifacts
+          cat ./*.sha256 > checksums.txt
+          rm -f ./*.sha256
+          ls -la
+
+      - name: Write release notes
+        run: |
+          k6z=$(awk '/go\.k6\.io\/k6\/v2 v/ {print $2}' bundles/k6z/go.mod)
+          k6z3270=$(awk '/go\.k6\.io\/k6 v/ {print $2}' bundles/k6z-3270/go.mod)
+          cat > notes.md <<EOF
+          Prebuilt k6 binaries for testing z/OS, including \`linux/s390x\`, which
+          upstream k6 does not publish.
+
+          | Archive | k6 | Extensions |
+          | --- | --- | --- |
+          | \`k6-z-*\` | $k6z | xk6-ssh |
+          | \`k6-z-3270-*\` | $k6z3270 | xk6-tn3270, xk6-ssh, xk6-exec |
+
+          \`k6-z\` tracks current k6. \`k6-z-3270\` stays on k6 1.x because
+          xk6-tn3270 and xk6-exec have not yet moved to the \`go.k6.io/k6/v2\`
+          module path, and a single binary cannot hold both.
+
+          Platforms: \`linux/s390x\`, \`linux/amd64\`, \`linux/arm64\`, \`darwin/arm64\`.
+          For z/OS UNIX itself, install through zopen: \`zopen install k6\`.
+
+          Verify a download against \`checksums.txt\`, and verify provenance with:
+
+          \`\`\`
+          gh attestation verify k6 --repo ${{ github.repository }}
+          \`\`\`
+
+          These binaries are builds of Grafana k6 and are distributed under
+          AGPL-3.0, not under this repository's Apache-2.0 license. The build is
+          reproducible from the pinned module files under \`bundles/\`. See NOTICE.
+
+          Documentation: https://msradam.github.io/k6-z/
+          EOF
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" artifacts/* --clobber
+          else
+            gh release create "$tag" --title "$tag" --notes-file notes.md --verify-tag artifacts/*
+          fi

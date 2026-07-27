@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scripts:
+    name: Compile and run the samples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: |
+            bundles/k6z/go.sum
+            bundles/k6z-3270/go.sum
+
+      - name: Build both bundles
+        run: make build
+
+      - name: Report what was built
+        run: |
+          ./dist/k6-z version
+          ./dist/k6-z-3270 version
+
+      # Compiles every script and resolves its imports. A bad import or a syntax
+      # error fails here rather than on someone's first run against an LPAR.
+      - name: Compile every sample script
+        run: make check
+
+      # Runs the z/OSMF samples end to end against a stand-in server, so the
+      # request shapes, checks, and thresholds are exercised without a mainframe.
+      - name: Run the z/OSMF samples against the mock server
+        run: make test
+
+  cross-compile:
+    name: Cross-compile
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: s390x
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: |
+            bundles/k6z/go.sum
+            bundles/k6z-3270/go.sum
+
+      - name: Build for ${{ matrix.goos }}/${{ matrix.goarch }}
+        run: make build GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}
+
+      - name: Confirm the binaries are for the target architecture
+        run: file dist/k6-z dist/k6-z-3270
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache-dependency-path: |
+            bundles/k6z/go.sum
+            bundles/k6z-3270/go.sum
+
+      - name: Vet and compile-check
+        run: make lint

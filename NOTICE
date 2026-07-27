@@ -1,0 +1,102 @@
+k6-z
+Copyright 2026 Adam Munawar Rahman
+
+This product includes software developed at github.com/msradam/k6-z.
+
+--------------------------------------------------------------------------------
+Licensing of this repository
+--------------------------------------------------------------------------------
+
+Everything authored in this repository is licensed under the Apache License,
+Version 2.0. That covers the sample scripts under scripts/, the mock z/OSMF
+server under tools/, the build definitions under bundles/, the documentation
+under docs/, and the build tooling.
+
+--------------------------------------------------------------------------------
+Licensing of the released binaries
+--------------------------------------------------------------------------------
+
+The binaries published on the releases page are NOT Apache-2.0.
+
+They are builds of Grafana k6, which is licensed under the GNU Affero General
+Public License version 3. Linking the extensions into k6 produces a combined
+work, and that combined work is distributed under AGPL-3.0. Anyone who receives
+a released binary receives it under AGPL-3.0 and has the rights that license
+grants, including the right to the corresponding source.
+
+The corresponding source is available as follows. Each release archive names the
+commit it was built from. The Go module files under bundles/ pin the exact
+version of k6 and of every extension and transitive dependency by version and
+checksum, so any release can be rebuilt from public sources with the recipe in
+the Makefile. Upstream sources:
+
+  k6                https://github.com/grafana/k6
+  xk6-tn3270        https://github.com/msradam/xk6-tn3270
+  xk6-ssh           https://github.com/grafana/xk6-ssh
+  xk6-exec          https://github.com/grafana/xk6-exec
+
+--------------------------------------------------------------------------------
+Third-party components
+--------------------------------------------------------------------------------
+
+Grafana k6
+  https://github.com/grafana/k6
+  Copyright the k6 authors. Licensed under AGPL-3.0.
+
+xk6-ssh, xk6-exec
+  https://github.com/grafana/xk6-ssh
+  https://github.com/grafana/xk6-exec
+  Copyright Grafana Labs. Licensed under Apache-2.0.
+
+xk6-tn3270
+  https://github.com/msradam/xk6-tn3270
+  Licensed under the MIT License.
+
+Inter
+  https://github.com/rsms/inter
+  Copyright the Inter Project Authors. Licensed under the SIL Open Font
+  License 1.1. See docs/assets/fonts/Inter-OFL.txt.
+
+JetBrains Mono
+  https://github.com/JetBrains/JetBrainsMono
+  Copyright the JetBrains Mono Project Authors. Licensed under the SIL Open
+  Font License 1.1. See docs/assets/fonts/JetBrainsMono-OFL.txt.
+
+Documentation site colours
+  The palette in docs/assets/site.css is derived from the published Grafana k6
+  website (k6.io): the k6 violet #7d64ff, the near-black #0e0a1f ground, the
+  cyan #00cdff accent, and the purple-grey text ramp. Colour values are facts
+  about a public page, not copied code. k6 sets its own type in TT Norms Pro,
+  a licensed face which is NOT used or redistributed here; Inter and JetBrains
+  Mono are substituted.
+
+--------------------------------------------------------------------------------
+Sources consulted for the sample scripts
+--------------------------------------------------------------------------------
+
+No code is copied from any of the following. They are the public references the
+sample scripts were written against, and they are cited so that readers can
+check the commands and API calls used here against their documented behaviour.
+
+IBM z/OSMF REST services
+  Endpoint paths, request headers, and response fields follow IBM's published
+  z/OSMF programming documentation.
+
+IBM Z Open Automation Utilities
+  https://github.com/IBM/zoau-samples (Apache-2.0)
+  The operator commands used in the samples are display-only commands drawn from
+  IBM's published ZOAU one-liners.
+
+Galasa
+  https://galasa.dev and https://github.com/galasa-dev/simplatform (EPL-2.0)
+  The TN3270 samples target SimBank, Galasa's sample 3270 application. Nothing
+  from Galasa is vendored here; the scripts connect to SimBank over the network
+  and read the screens it sends.
+
+Zowe
+  https://github.com/zowe/zowe-cli (EPL-2.0)
+  Used as a cross-check on z/OSMF REST resource paths.
+
+IBM CICS
+  Transaction identifiers used in the samples (CESN, CESF) and the message
+  identifiers matched against are from IBM's published CICS documentation.

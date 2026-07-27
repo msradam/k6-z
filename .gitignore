@@ -1,0 +1,7 @@
+dist/
+summary.json
+*.tar.gz
+__pycache__/
+.DS_Store
+docs/_site/
+docs/.jekyll-cache/

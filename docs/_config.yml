@@ -1,0 +1,40 @@
+title: k6-z
+tagline: Grafana k6 on IBM z/OS
+description: >-
+  Load testing IBM z/OS with Grafana k6. Sample scripts for z/OSMF REST, TN3270,
+  and ZOAU, plus s390x builds that upstream k6 does not publish.
+url: https://msradam.github.io
+baseurl: /k6-z
+repository: msradam/k6-z
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  hard_wrap: false
+
+permalink: /:basename/
+
+sass:
+  style: compressed
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+
+nav:
+  - group: Start here
+    items:
+      - { title: Why k6 on z/OS, url: / }
+      - { title: Install, url: /install/ }
+      - { title: From JMeter and TPNS, url: /migrating/ }
+  - group: Test surfaces
+    items:
+      - { title: z/OSMF REST, url: /zosmf/ }
+      - { title: TN3270, url: /tn3270/ }
+      - { title: ZOAU, url: /zoau/ }
+  - group: Reference
+    items:
+      - { title: k6 2.x features, url: /k6-features/ }
+      - { title: Builds and s390x, url: /builds/ }

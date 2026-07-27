@@ -1,0 +1,668 @@
+/* Palette and type derived from the Grafana k6 website: the k6 violet #7d64ff on
+   near-black #0e0a1f, cyan #00cdff as the second accent, and the purple-grey text
+   ramp k6 uses for body copy. k6 sets headings in TT Norms Pro, which is a
+   licensed face, so this substitutes JetBrains Mono for chrome and headings and
+   Inter for prose. Both are OFL and self-hosted, so the site makes no request to
+   any other origin. */
+
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("./fonts/inter-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("./fonts/inter-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("./fonts/inter-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: swap; src: url("./fonts/inter-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("./fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url("./fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 700; font-display: swap; src: url("./fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2"); }
+
+:root {
+  --k6-violet: #7d64ff;
+  --k6-violet-bright: #8b55f6;
+  --k6-violet-deep: #4834b2;
+  --k6-cyan: #00cdff;
+  --k6-green: #28cd8c;
+  --k6-pink: #fa3287;
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --step-1: 4px;
+  --step-2: 8px;
+  --step-3: 12px;
+  --step-4: 16px;
+  --step-5: 24px;
+  --step-6: 32px;
+  --step-7: 48px;
+  --step-8: 64px;
+  --step-9: 96px;
+
+  --measure: 74ch;
+  --shell: 1220px;
+}
+
+/* Dark is the primary. k6's own site is dark, and so is every terminal this
+   documentation is read next to. */
+:root,
+[data-theme="dark"] {
+  --bg: #0e0a1f;
+  --bg-raised: #171130;
+  --bg-inset: #1d1638;
+  --bg-code: #120e26;
+
+  --text: #d8d4e8;
+  --text-strong: #f9f8fc;
+  --text-muted: #8f8aa8;
+  --text-faint: #626284;
+
+  --line: #2e2b3b;
+  --line-strong: #47476b;
+
+  --accent: var(--k6-violet);
+  --accent-hover: #9b87ff;
+  --accent-quiet: rgba(125, 100, 255, 0.14);
+  --accent-alt: var(--k6-cyan);
+
+  --code-comment: #626284;
+  --code-keyword: #c055f6;
+  --code-string: #c3e88d;
+  --code-number: #f78c6c;
+  --code-function: #82aaff;
+  --code-type: #00cdff;
+  --code-builtin: #28cd8c;
+  --code-operator: #fa3287;
+  --code-punctuation: #8f8aa8;
+  --code-add: #28cd8c;
+  --code-del: #dd4a68;
+}
+
+[data-theme="light"] {
+  --bg: #f9f8fc;
+  --bg-raised: #ffffff;
+  --bg-inset: #ece8f1;
+  --bg-code: #f4f2f9;
+
+  --text: #3c3c64;
+  --text-strong: #0e0a1f;
+  --text-muted: #5a5c87;
+  --text-faint: #8f8aa8;
+
+  --line: #e3e2e9;
+  --line-strong: #c7c4d4;
+
+  --accent: #5a3ff0;
+  --accent-hover: #4834b2;
+  --accent-quiet: rgba(125, 100, 255, 0.1);
+  --accent-alt: #0b7ea3;
+
+  --code-comment: #5a5c87;
+  --code-keyword: #7c1fa8;
+  --code-string: #35682a;
+  --code-number: #a44508;
+  --code-function: #2455b8;
+  --code-type: #0b6d8c;
+  --code-builtin: #12704c;
+  --code-operator: #c4106a;
+  --code-punctuation: #5a5c87;
+  --code-add: #12704c;
+  --code-del: #b32447;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-quiet);
+  color: var(--text-strong);
+}
+
+a {
+  color: var(--accent);
+  text-decoration-color: var(--accent-quiet);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--accent-hover);
+  text-decoration-color: currentColor;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-alt);
+  outline-offset: 2px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip:focus {
+  left: var(--step-4);
+  top: var(--step-4);
+  z-index: 20;
+  padding: var(--step-2) var(--step-4);
+  background: var(--bg-raised);
+  border: 1px solid var(--accent);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* Masthead */
+
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.masthead-inner {
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding: var(--step-3) var(--step-5);
+  display: flex;
+  align-items: center;
+  gap: var(--step-4);
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-strong);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.wordmark:hover {
+  color: var(--text-strong);
+}
+
+.wordmark .mark {
+  color: var(--accent);
+}
+
+/* The blinking block after the wordmark. Purely decorative, so it is hidden from
+   assistive tech and stops moving when the reader asks for less motion. */
+.wordmark .caret {
+  width: 8px;
+  height: 15px;
+  margin-left: 4px;
+  background: var(--accent-alt);
+  animation: blink 1.2s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark .caret {
+    animation: none;
+  }
+}
+
+.tagline {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-right: auto;
+  padding-left: var(--step-4);
+  border-left: 1px solid var(--line);
+}
+
+@media (max-width: 700px) {
+  .tagline {
+    display: none;
+  }
+}
+
+.masthead-links {
+  display: flex;
+  gap: var(--step-4);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.masthead-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.masthead-links a:hover {
+  color: var(--text-strong);
+}
+
+.theme-toggle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  padding: 5px 10px;
+  min-height: 26px;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  color: var(--accent-alt);
+  border-color: var(--accent-alt);
+}
+
+/* Shell */
+
+.shell {
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding: var(--step-7) var(--step-5) var(--step-9);
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: var(--step-8);
+  align-items: start;
+}
+
+@media (max-width: 940px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--step-6);
+    padding-top: var(--step-5);
+  }
+}
+
+.sidebar {
+  position: sticky;
+  top: calc(var(--step-8) + var(--step-2));
+  font-size: 14px;
+}
+
+@media (max-width: 940px) {
+  .sidebar {
+    position: static;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: var(--step-4);
+  }
+}
+
+.sidebar-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 var(--step-2);
+  display: flex;
+  align-items: center;
+  gap: var(--step-2);
+}
+
+.sidebar-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.sidebar-label + .sidebar-label {
+  margin-top: var(--step-6);
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar a {
+  display: block;
+  padding: 6px 0 6px var(--step-3);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-left: 2px solid var(--line);
+}
+
+.sidebar a:hover {
+  color: var(--text-strong);
+  border-left-color: var(--line-strong);
+  background: var(--accent-quiet);
+}
+
+.sidebar a[aria-current="page"] {
+  color: var(--accent);
+  font-weight: 500;
+  border-left-color: var(--accent);
+  background: var(--accent-quiet);
+}
+
+/* Content */
+
+.content {
+  min-width: 0;
+  max-width: var(--measure);
+}
+
+.content h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(30px, 4.4vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  font-weight: 700;
+  color: var(--text-strong);
+  margin: 0 0 var(--step-4);
+}
+
+.content h2 {
+  font-family: var(--font-mono);
+  font-size: 21px;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+  color: var(--text-strong);
+  margin: var(--step-8) 0 var(--step-3);
+  padding-top: var(--step-4);
+  border-top: 1px solid var(--line);
+}
+
+/* The violet tick that reads as a prompt marker in front of every section. */
+.content h2::before {
+  content: "// ";
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.content h3 {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+  margin: var(--step-6) 0 var(--step-2);
+}
+
+.content p,
+.content li {
+  color: var(--text);
+}
+
+.content ul,
+.content ol {
+  padding-left: var(--step-5);
+}
+
+.content li + li {
+  margin-top: var(--step-2);
+}
+
+.content li::marker {
+  color: var(--accent);
+}
+
+.content strong {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.content hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: var(--step-7) 0;
+}
+
+/* Tables */
+
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: var(--step-5) 0;
+}
+
+.content th,
+.content td {
+  text-align: left;
+  padding: var(--step-2) var(--step-3);
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.content th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+
+.content tbody tr:hover {
+  background: var(--accent-quiet);
+}
+
+.content td code {
+  white-space: nowrap;
+}
+
+.content blockquote {
+  margin: var(--step-5) 0;
+  padding: var(--step-3) var(--step-5);
+  border-left: 2px solid var(--accent);
+  color: var(--text-muted);
+}
+
+/* Wide content scrolls inside its own box so the page never scrolls sideways. */
+.table-wrap,
+.content pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Code */
+
+.content code {
+  font-family: var(--font-mono);
+  font-size: 0.87em;
+  background: var(--bg-inset);
+  color: var(--accent-alt);
+  padding: 0.15em 0.4em;
+  border-radius: 2px;
+}
+
+.content pre {
+  background: var(--bg-code);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: 3px;
+  padding: var(--step-4);
+  margin: var(--step-5) 0;
+  line-height: 1.6;
+  font-size: 13.5px;
+}
+
+.content pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: var(--text);
+}
+
+/* Rouge tokens. Both themes are covered because the --code-* values flip with
+   data-theme. */
+.highlight .c, .highlight .cm, .highlight .c1, .highlight .cs, .highlight .cd { color: var(--code-comment); font-style: italic; }
+.highlight .k, .highlight .kd, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kv { color: var(--code-keyword); }
+.highlight .kc, .highlight .kt { color: var(--code-type); }
+.highlight .s, .highlight .s1, .highlight .s2, .highlight .sb, .highlight .sc, .highlight .sd, .highlight .se, .highlight .sh, .highlight .si, .highlight .sx, .highlight .sr, .highlight .ss { color: var(--code-string); }
+.highlight .m, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .mo, .highlight .il { color: var(--code-number); }
+.highlight .nf, .highlight .fm { color: var(--code-function); }
+.highlight .nc, .highlight .nn, .highlight .no, .highlight .ne { color: var(--code-type); }
+.highlight .nb, .highlight .bp { color: var(--code-builtin); }
+.highlight .nt { color: var(--code-keyword); }
+.highlight .na { color: var(--code-function); }
+.highlight .nv, .highlight .vc, .highlight .vg, .highlight .vi { color: var(--text); }
+.highlight .o, .highlight .ow { color: var(--code-operator); }
+.highlight .p, .highlight .pi { color: var(--code-punctuation); }
+.highlight .gd { color: var(--code-del); }
+.highlight .gi { color: var(--code-add); }
+.highlight .err { color: var(--code-del); }
+
+/* Landing page */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 var(--step-3);
+}
+
+.lede {
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin: 0 0 var(--step-6);
+  max-width: 62ch;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--step-3);
+  margin: var(--step-6) 0 var(--step-7);
+  padding: 0;
+  list-style: none;
+}
+
+.cards li {
+  margin: 0;
+}
+
+.card {
+  display: block;
+  height: 100%;
+  padding: var(--step-4);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg-raised);
+  text-decoration: none;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+.card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+  .card:hover {
+    transform: none;
+  }
+}
+
+.card-title {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-strong);
+  margin-bottom: var(--step-1);
+}
+
+.card-note {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.callout {
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent-alt);
+  border-radius: 3px;
+  background: var(--bg-raised);
+  padding: var(--step-4);
+  margin: var(--step-5) 0;
+  font-size: 14.5px;
+}
+
+.callout p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.callout p + p {
+  margin-top: var(--step-2);
+}
+
+.callout-warn {
+  border-left-color: var(--k6-pink);
+}
+
+/* Footer */
+
+.footer {
+  border-top: 1px solid var(--line);
+  background: var(--bg-raised);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.footer-inner {
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding: var(--step-5);
+  display: flex;
+  gap: var(--step-5);
+  flex-wrap: wrap;
+  justify-content: space-between;
+  line-height: 1.7;
+}
+
+.footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--accent);
+}
